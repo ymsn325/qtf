@@ -3,5 +3,9 @@
     "editor.tabSize": 2,
     "editor.cursorStyle": "block"
   },
-  "C_Cpp.default.intelliSenseMode": "gcc-x64"
+  "C_Cpp.default.intelliSenseMode": "gcc-x64",
+  "files.associations": {
+    "vector": "cpp",
+    "iosfwd": "cpp"
+  }
 }

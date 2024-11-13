@@ -6,6 +6,7 @@
   "C_Cpp.default.intelliSenseMode": "gcc-x64",
   "files.associations": {
     "vector": "cpp",
-    "iosfwd": "cpp"
+    "iosfwd": "cpp",
+    "cmath": "cpp"
   }
 }

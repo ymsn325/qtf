@@ -1,5 +1,8 @@
 #include "sound.hpp"
 
+#include <cmath>
+#include <sstream>
+
 #include "standard.hpp"
 
 int g_default_total_ch = 1;
@@ -78,6 +81,7 @@ void analyze_file_name(string file_name_all, vector<string> &file_name,
     force_total_ch = 0;
     samples = 0;
 
+    // +区切りの前までがファイル名とch。これをfile_name_chに格納
     if ((pos = file_name_all.find("+|+")) != string::npos) {
       file_name_ch = file_name_all.substr(0, pos);
       file_name_all.erase(0, pos + 3);
@@ -86,14 +90,17 @@ void analyze_file_name(string file_name_all, vector<string> &file_name,
       file_name_all = "";
     }
 
+    // wavemap_lowerの記述があれば、先にそれを処理
     wavemap_lower.push_back(MAX_DBL);
 
+    // wavemap_upperの記述があれば、先にそれを処理
     if (wavemap_lower.back() < 0.0) {
       wavemap_upper.push_back(-wavemap_lower.back());
     } else {
       wavemap_upper.push_back(MAX_DBL);
     }
 
+    // pixmap生成記述があれば、先にそれを処理
     pixmap_cmd.resize(file_num + 1);
     if ((pos = file_name_ch.find(":")) != string::npos &&
         (pos2 = file_name_ch.rfind("_")) != string::npos && pos < pos2) {
@@ -107,8 +114,54 @@ void analyze_file_name(string file_name_all, vector<string> &file_name,
       pixmap_cmd[file_num].push_back("w");
     }
 
+    // :区切りの前までがファイル名。これらをfile_nameとchannelにpush_back
     if (file_name_ch.rfind(":") == file_name_ch.size() - 1) {
-      file_name_ch.resize(file_name_ch.size() - 1);
+      if ((pos2 = file_name_ch.rfind(":")) == pos) {
+        file_name.push_back(file_name_ch.substr(0, pos));
+        if ((pos3 = file_name_ch.rfind(".")) != string::npos && pos3 > pos) {
+          force_total_ch = stoi(
+              file_name_ch.substr(pos3 + 1, file_name_ch.size() - pos3 - 1));
+          if (pos3 == pos + 1) {
+            // file_name:.2の形式
+            ch_cur = 1;
+          } else {
+            ch_cur = stoi(file_name_ch.substr(pos + 1, pos3 - pos - 1));
+          }
+        } else {
+          ch_cur =
+              stoi(file_name_ch.substr(pos + 1, file_name_ch.size() - pos - 1));
+        }
+        channel.push_back(ch_cur);
+      } else {
+        // file_name.wav:*.*の形式
+        if (file_name_ch.at(file_name_ch.size() - 2) == 's') {
+          // filename.wav:3.2sの形式
+          ss.str("");
+          ss.clear();
+          ss << file_name_ch.substr(pos2 + 1, file_name_ch.size() - pos2 - 2);
+          ss >> length;
+          samples = int(round(length * fs));
+          file_name.push_back(int2string(samples) + ":" +
+                              file_name_ch.substr(0, pos));
+        } else {
+          // filename.wav:*:3.2の形式
+          samples = string2int(
+              file_name_ch.substr(pos2 + 1, file_name_ch.size() - pos2 - 2));
+          file_name.push_back(
+              file_name_ch.substr(pos2 + 1, file_name_ch.size() - pos2 - 1) +
+              ":" + file_name_ch.substr(0, pos));
+        }
+        if (pos + 1 == pos2) {
+          // file_name:.2:*の形式
+          ch_cur = 1;
+        } else {
+          k ch_cur = string2int(file_name_ch.substr(pos + 1, pos3 - pos - 1));
+        }
+      }
+      else {
+        ch_cur = string2int(file_name_ch.substr(pos + 1, pos2 - pos - 1));
+      }
+      channel.push_back(ch_cur);
     }
   }
 }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <fftw3.h>
 
 #include <complex>
@@ -33,4 +35,11 @@ class TF : public Sobj {
   double norm_max() { return m_norm_max; }
   int norm_max_k() { return m_norm_max_k; }
   int norm_max_n() { return m_norm_max_n; }
+  int n_bgn() { return m_n_bgn; }
+  int n_end() { return m_n_end; }
+  int n_step() { return m_n_step; }
+  int n_size() { return m_n_size; }
+  int k_bgn() { return m_k_bgn; }
+  int k_end() { return m_k_end; }
+  complex<double> **data() { return m_data; }
 };

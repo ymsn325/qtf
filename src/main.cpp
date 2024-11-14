@@ -9,6 +9,7 @@
 #include "sound.hpp"
 #include "standard.hpp"
 #include "tf.hpp"
+#include "tfmap.hpp"
 
 using namespace std;
 
@@ -55,6 +56,7 @@ int main(int argc, char **argv) {
   vector<Sound *> sound_list;
   Shapes *shapes;
   vector<TF *> tf_list;
+  vector<TFmap *> tfmap_list;
 
   QApplication app(argc, argv);
 
@@ -238,6 +240,10 @@ int main(int argc, char **argv) {
                                      step_fft, k_bgn, k_end));
             tf_construct_flag = true;
           }
+
+          tfmap_list.push_back(new TFmap(
+              "tfmap_" + file_id + ch_id, tf_list.back(), k_bgn_init,
+              k_end_init, height, 1, tfmap_limit_lower, tfmap_limit_upper));
         }
       }
     }

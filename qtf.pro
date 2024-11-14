@@ -13,7 +13,10 @@ SOURCES += \
   src/sound.cpp \
   src/shape.cpp \
   src/tf.cpp \
-  src/alsa_out.cpp
+  src/pixmap.cpp \
+  src/tfmap.cpp \
+  src/alsa_out.cpp \
+  src/image.cpp
 
 HEADERS += \
   src/mainwindow.hpp \
@@ -22,7 +25,11 @@ HEADERS += \
   src/sound.hpp \
   src/shape.hpp \
   src/tf.hpp \
-  src/alsa_out.hpp
+  src/pixmap.hpp \
+  src/tfmap.hpp \
+  src/alsa_out.hpp \
+  src/image.hpp \
+  src/standard.hpp
 
 LIBS += \
   -lasound \

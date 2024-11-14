@@ -12,11 +12,13 @@
 using namespace std;
 
 int g_default_total_ch = 1;
+static const int g_margin = 6 * 4096;
 
 fftw_complex *g_fftw_in, *g_fftw_out;
 fftw_plan g_plan_fftw;
 
 extern string g_program_name;
+extern string g_verbose_mode;
 
 Sound::Sound(string id) : Sobj(id) {
   m_min = MAX_DBL;
@@ -71,6 +73,112 @@ Sound::Sound(string id, string file_name, double fs, int n_bgn, int n_end,
   if (read_data) {
     // Read data from file
   }
+}
+
+Sounds::Sounds(string id, string file_name, double fs, int n_bgn, int n_end,
+               int ch)
+    : Sobj(id), m_ch(ch) {
+  FILE *fp;
+  double fs_dummy;
+  int n_samples;
+  int bias;
+  int bitdepth;
+  bool flag_float;
+  char ch_name[11];
+  Sound *sound;
+  int n, m, m2, m3, p;
+
+  read_audio_file_data(file_name, &fp, &fs_dummy, &m_ch, &n_samples, &bias,
+                       &bitdepth, &flag_float);
+
+  if (verbose('d')) {
+    cerr << "Read file: ";
+    if (fs_dummy > 0.0) {
+      cerr << "fs = " << fs_dummy << " Hz, ";
+    }
+    cerr << "bit depth = " << bitdepth << " bit, ";
+    if (flag_float) {
+      cerr << "(float)" << endl;
+    } else {
+      cerr << endl;
+    }
+  }
+
+  for (int c = 0; c < m_ch; c++) {
+    sprintf(ch_name, "%d", c);
+    sound = new Sound(id + "_ch" + ch_name);
+    sound->set_file_name(file_name);
+    sound->set_fs(fs);
+    sound->set_n_bgn(n_bgn);
+    sound->set_n_end(n_end);
+    sound->set_selected_ch(c);
+    sound->set_total_ch(m_ch);
+    sound->set_n_samples(n_samples);
+    sound->set_in_ch(c + 1);
+    sound->set_data_margin(new double[n_end - n_bgn + 2 * g_margin]);
+    sound->set_data(sound->data_margin() + g_margin);
+    m_sound_list.push_back(sound);
+  }
+
+  for (int i = 0; i < (n_bgn + bias - g_margin) * m_ch; i++) {
+    // 先頭の不要な部分を読み飛ばす
+    if ((n = getc(fp)) == EOF || (m = getc(fp)) == EOF) {
+      cerr << "Error: " << file_name << " is too short." << endl;
+      exit(1);
+    }
+
+    if (bitdepth > 16) {
+      if ((m = getc(fp)) == EOF) {
+        break;
+      }
+    }
+    if (bitdepth > 24) {
+      if ((m = getc(fp)) == EOF) {
+        break;
+      }
+    }
+  }
+
+  p = 0;
+  for (int i = 0; i < g_margin - (n_bgn)-bias; i++) {
+    for (int c = 0; c < m_ch; c++) {
+      m_sound_list[c]->data_margin()[p] = 0.0;
+    }
+    p++;
+  }
+
+  if (flag_float) {
+  } else {
+    for (int i = max2(n_bgn - g_margin + bias, 0);
+         p < n_end - n_bgn + 2 * g_margin && i < n_samples + bias; i++, p++) {
+      for (int c = 0; c < m_ch; c++) {
+        if (bitdepth > 24) {
+          if (m3 = getc(fp) == EOF) {
+            break;
+          } else {
+            m3 = 0;
+          }
+        }
+        if (bitdepth > 16) {
+          if ((m2 = getc(fp)) == EOF) {
+            break;
+          }
+        } else {
+          m2 = 0;
+        }
+        if ((m = getc(fp)) == EOF) {
+          break;
+        }
+        if ((n = getc(fp)) == EOF) {
+          break;
+        }
+        n = ((((n << 8) | m) << 8) | m2) << 8 | m3;
+        m_sound_list[c]->data_margin()[p] = n >> 16;
+      }
+    }
+  }
+
+  fclose(fp);
 }
 
 void analyze_file_name(string file_name_all, vector<string> &file_name,
@@ -236,7 +344,7 @@ void read_audio_file_header(string file_name, double *fs, int *ch,
   if (*ch == 0) {
     *ch = g_default_total_ch;
   }
-  if (*fs = 0.0) {
+  if (*fs == 0.0) {
     *fs = 44100.0;
   }
   if (fp != nullptr) {
@@ -361,4 +469,53 @@ void init_fftw(int n_fft) {
   g_fftw_out = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * n_fft);
   g_plan_fftw = fftw_plan_dft_1d(n_fft, g_fftw_in, g_fftw_out, FFTW_FORWARD,
                                  FFTW_MEASURE);
+}
+
+void strip_suffix_from_file_name(string &file_name) {
+  if (file_name.size() > 4 &&
+      (file_name.substr(file_name.size() - 4) == ".wav" ||
+       file_name.substr(file_name.size() - 4) == ".WAV")) {
+    file_name.resize(file_name.size() - 4);
+  }
+}
+
+void strip_dir_from_file_name(string &file_name) {
+  size_t pos;
+
+  if ((pos = file_name.rfind("/")) != string::npos) {
+    file_name.substr(pos + 1, file_name.size() - pos - 1);
+  }
+}
+
+bool find_string(vector<string> str_list, unsigned int i, string key,
+                 int &height, int &rest) {
+  size_t pos, pos2;
+
+  if (str_list[i].find(key) != string::npos) {
+    if ((pos = str_list[i].find(":")) != string::npos) {
+      pos2 = str_list[i].rfind(":");
+      if (pos + 1 < pos2) {
+        // key*:110:abcの形式
+        height = string2int(str_list[i].substr(pos + 1, pos2 - pos - 1));
+        if (pos2 < str_list[i].size() - 1) {
+          rest = string2int(
+              str_list[i].substr(pos2 + 1, str_list[i].size() - pos2 - 1));
+        }
+      } else if (pos + 1 == pos2) {
+        // key*::abcの形式
+        if (pos2 < str_list[i].size() - 1) {
+          rest = string2int(
+              str_list[i].substr(pos2 + 1, str_list[i].size() - pos2 - 1));
+        }
+      } else {
+        // key*:110の形式
+        if (pos < str_list[i].size() - 1) {
+          height = string2int(
+              str_list[i].substr(pos + 1, str_list[i].size() - pos - 1));
+        }
+      }
+    }
+    return true;
+  }
+  return false;
 }

@@ -11,6 +11,8 @@ SOURCES += \
   src/mainwindow.cpp \
   src/sobj.cpp \
   src/sound.cpp \
+  src/shape.cpp \
+  src/tf.cpp \
   src/alsa_out.cpp
 
 HEADERS += \
@@ -18,6 +20,8 @@ HEADERS += \
   src/arg_srv.hpp \
   src/sobj.hpp \
   src/sound.hpp \
+  src/shape.hpp \
+  src/tf.hpp \
   src/alsa_out.hpp
 
 LIBS += \

@@ -45,3 +45,8 @@ Sobj::~Sobj() {
     delete child;
   }
 }
+
+void Sobj::append_parent(Sobj *parent) {
+  m_parent_list.push_back(parent);
+  parent->m_child_list.push_back(this);
+}

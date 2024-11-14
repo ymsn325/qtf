@@ -5,7 +5,10 @@
 #include "alsa_out.hpp"
 #include "arg_srv.hpp"
 #include "mainwindow.hpp"
+#include "shape.hpp"
 #include "sound.hpp"
+#include "standard.hpp"
+#include "tf.hpp"
 
 using namespace std;
 
@@ -22,6 +25,8 @@ extern int g_alsa_fragment_size;
 extern int g_alsa_latency_default;
 extern int g_alsa_latency;
 extern int g_alsa_period;
+extern fftw_complex *g_fftw_in, *g_fftw_out;
+extern fftw_plan g_plan_fftw;
 
 int main(int argc, char **argv) {
   string file_name_all;
@@ -43,10 +48,16 @@ int main(int argc, char **argv) {
   int mainwindow_init_width_default, mainwindow_init_height_default;
   int tfmap_height, wavemap_height;
   int width;
+  string file_id, files_id, ch_id;
+  bool tf_construct_flag;
+  int height, rest;
+  vector<Sounds *> sounds;
+  vector<Sound *> sound_list;
+  Shapes *shapes;
+  vector<TF *> tf_list;
 
   QApplication app(argc, argv);
 
-  vector<Sound *> sound_list;
   ArgSrv arg_srv(argc, argv);
   arg_srv.set(&file_name_all, "file_name_all", "ファイル名", DEFAULT_FILE_NAME);
   arg_srv.range("1 256");
@@ -67,7 +78,7 @@ int main(int argc, char **argv) {
   }
   arg_srv.range("");
   arg_srv.set(&f_bgn, "f_bgn", "取り扱い最低周波数", 0.0);
-  arg_srv.set(&f_end, "f_end", "取り扱い最高周波数", 0.0);
+  arg_srv.set(&f_end, "f_end", "取り扱い最高周波数", f_end_default);
   arg_srv.set(&f_bgn_init, "f_bgn_init", "起動時の最低周波数", f_bgn);
   arg_srv.set(&f_end_init, "f_bgn_init", "起動時の最高周波数", f_end);
   arg_srv.enumerate("n m r b f c g t h H s S");
@@ -186,10 +197,51 @@ int main(int argc, char **argv) {
 
   init_fftw(n_fft);
 
+  sounds.resize(file_name.size());
   sound_list.resize(n_sounds);
 
-  sound_list.push_back(
-      new Sound("sound", DEFAULT_FILE_NAME, 44100.0, 0, 0, 0, 1, true));
+  shapes =
+      new Shapes("shapes", shape_type, n_shape_min, n_shape_max, n_shape_num);
+
+  for (int i = 0, j = 0; i < file_name.size(); i++) {
+    file_id = file_name[i];
+    strip_suffix_from_file_name(file_id);
+    strip_dir_from_file_name(file_id);
+    if (i != 0) {
+      file_id += ", ";
+    }
+    files_id += file_id;
+    sounds[i] = new Sounds("sounds_" + file_id, file_name[i], fs, n_bgn, n_end,
+                           total_channel[i]);
+    for (int k = 0; k < total_channel[i]; k++) {
+      if (total_channel[i] == 2) {
+        if (k == 0) {
+          ch_id = ":L";
+        } else {
+          ch_id = ":R";
+        }
+      } else {
+        ch_id = ":" + int2string(k);
+      }
+      sound_list[j] = sounds[i]->sound_list()[k];
+      sound_list[j]->set_id("sound_" + file_id + ch_id);
+      tf_construct_flag = false;
+
+      for (int j2 = 0; j2 < pixmap_cmd[i].size(); j2++) {
+        height = tfmap_height;
+        rest = MAX_INT;
+        if (find_string(pixmap_cmd[i], j2, "t", height, rest)) {
+          if (!tf_construct_flag) {
+            tf_list.push_back(new TF("tf_" + file_id + ch_id, sound_list[j],
+                                     shapes->shape_list()[init_shape],
+                                     &g_plan_fftw, g_fftw_in, g_fftw_out, n_fft,
+                                     step_fft, k_bgn, k_end));
+            tf_construct_flag = true;
+          }
+        }
+      }
+    }
+  }
 
   QMainWindow window;
   window.show();

@@ -99,11 +99,11 @@ bool TFmap::modify(int n_bgn, int n_end) {
         for (int i = 0; i < m_n_size; i++) {
           m_pow[pix] =
               10.0 *
-              (log10(norm(m_parent_tf->data()[i][k - m_parent_tf->k_bgn()])) -
+              (log10(norm((m_parent_tf->data()[i][k - m_parent_tf->k_bgn()])) /
+                     sqr(m_parent_tf->parent_shape()->area())) -
                lower) /
               (upper - lower);
           x = (m_pow[pix] - m_contrast_min) / (m_contrast_max - m_contrast_min);
-          cerr << m_pow[pix] << " " << x << endl;
           if (m_flag_reverse) {
             x = 1.0 - x;
           }

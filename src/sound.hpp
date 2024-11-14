@@ -41,3 +41,9 @@ void analyze_file_name(string file_name_all, vector<string> &file_name,
                        double &fs_file, int &n_samples, int &n_sounds,
                        vector<double> &wavemap_lower,
                        vector<double> &wavemap_upper);
+void read_audio_file_header(string file_name, double *fs, int *ch,
+                            int *n_samples);
+void read_audio_file_data(string file_name, FILE **fp, double *fs, int *ch,
+                          int *n_samples, int *bias, int *bitdepth,
+                          bool *flag_float);
+void audio_read_err(string file_name);

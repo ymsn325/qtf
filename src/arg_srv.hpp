@@ -372,6 +372,4 @@ void ArgSrv::finish() {
       exit(1);
     }
   }
-
-  delete this;
 }

@@ -57,7 +57,7 @@ ArgSrv::ArgSrv(int argc, char** argv) {
       m_flag_default = true;
     } else if (strncmp(argv[p], "-l", 2) == 0) {
       m_flag_label = true;
-    } else if (strncmp(argv[p], "-h", 6) == 0) {
+    } else if (strncmp(argv[p], "-h", 2) == 0) {
       if (*(argv[p] + 2) == 0) {
         m_help_level = 4;
       } else {
@@ -191,7 +191,7 @@ void ArgSrv::set(T1* var, const char* name, const char* comment,
         cerr << " (range: ";
         cerr << tmp_string;
         while (m_range_stream >> tmp_string) {
-          cerr << " -  " << tmp_string;
+          cerr << "-" << tmp_string;
         }
         cerr << ")";
       }
@@ -323,7 +323,7 @@ void ArgSrv::set(T1* var, const char* name, const char* comment,
         cerr << " (range: ";
         cerr << tmp_string;
         while (m_range_stream >> tmp_string) {
-          cerr << " - " << tmp_string;
+          cerr << "-" << tmp_string;
         }
         cerr << ")";
       }

@@ -1,5 +1,7 @@
 #include "sound.hpp"
 
+#include <fftw3.h>
+
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -10,6 +12,10 @@
 using namespace std;
 
 int g_default_total_ch = 1;
+
+fftw_complex *g_fftw_in, *g_fftw_out;
+fftw_plan g_plan_fftw;
+
 extern string g_program_name;
 
 Sound::Sound(string id) : Sobj(id) {
@@ -184,6 +190,34 @@ void analyze_file_name(string file_name_all, vector<string> &file_name,
     ch = g_default_total_ch;
     fs_file = 0.0;
     read_audio_file_header(file_name.back(), &fs, &ch, &n_samples);
+
+    if (fs_file == 0.0) {
+      fs_file = fs;
+    } else if (fs_file != fs) {
+      cerr << "fs: " << fs_file << " was adopted. But fs: " << fs
+           << " was detected.\a" << endl;
+    }
+
+    if (force_total_ch != 0) {
+      n_samples = (n_samples + samples) * ch / force_total_ch - samples;
+      ch = force_total_ch;
+    }
+
+    total_channel.push_back(ch);
+    if (channel.back() == -1) {
+      // 指定チャネルがなくて
+      if (ch == 1) {
+        // ソースが1 chなら
+        channel.back() = 0;  // 指定は0 ch(最初のch)とする
+        n_sounds++;
+      } else {
+        // ソースが多chなら
+        n_sounds += ch;  // n_soundsは全チャネル分増加。channelは-1のまま
+      }
+    } else {
+      n_sounds++;
+    }
+    file_num++;
   }
 }
 
@@ -199,6 +233,21 @@ void read_audio_file_header(string file_name, double *fs, int *ch,
 
   read_audio_file_data(file_name, &fp, fs, ch, n_samples, &bias, &bitdepth,
                        &flag_float);
+  if (*ch == 0) {
+    *ch = g_default_total_ch;
+  }
+  if (*fs = 0.0) {
+    *fs = 44100.0;
+  }
+  if (fp != nullptr) {
+    if (*n_samples == 0) {
+      file_size = ftell(fp);
+      fseek(fp, 0, SEEK_END);
+      file_size = ftell(fp) - file_size;
+      *n_samples = file_size / ((bitdepth / 8) * *ch) - bias;
+    }
+    fclose(fp);
+  }
 }
 
 void read_audio_file_data(string file_name, FILE **fp, double *fs, int *ch,
@@ -286,7 +335,7 @@ void read_audio_file_data(string file_name, FILE **fp, double *fs, int *ch,
       if (!(n = fread(&buf4, 4, 1, *fp))) {
         audio_read_err(file_name);
       }
-      *n_samples = buf4;
+      *n_samples = buf4 / ((*bitdepth / 8) * *ch);
       break;
     } else {
       if (!(n = fread(&buf4, 4, 1, *fp))) {
@@ -305,4 +354,11 @@ void audio_read_err(string file_name) {
   cerr << g_program_name << ": " << "Error: Input file = \"" << file_name
        << "\"\a" << endl;
   exit(1);
+}
+
+void init_fftw(int n_fft) {
+  g_fftw_in = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * n_fft);
+  g_fftw_out = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * n_fft);
+  g_plan_fftw = fftw_plan_dft_1d(n_fft, g_fftw_in, g_fftw_out, FFTW_FORWARD,
+                                 FFTW_MEASURE);
 }

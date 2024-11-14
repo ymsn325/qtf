@@ -2,13 +2,26 @@
 #include <QMainWindow>
 #include <string>
 
+#include "alsa_out.hpp"
 #include "arg_srv.hpp"
+#include "mainwindow.hpp"
 #include "sound.hpp"
 
 using namespace std;
 
 static const string DEFAULT_FILE_NAME =
     "/home/sy/audio/ichimoji_PF02_0501_033.wav";
+
+extern int g_mainwindow_init_x;
+extern int g_mainwindow_init_y;
+extern int g_mainwindow_init_width;
+extern int g_mainwindow_init_height;
+extern string g_alsa_dev_default;
+extern string g_alsa_dev;
+extern int g_alsa_fragment_size;
+extern int g_alsa_latency_default;
+extern int g_alsa_latency;
+extern int g_alsa_period;
 
 int main(int argc, char **argv) {
   string file_name_all;
@@ -18,8 +31,18 @@ int main(int argc, char **argv) {
   int default_output_bitdepth;
   int n_samples;
   int n_sounds;
+  double f_bgn, f_end, f_bgn_init, f_end_init, f_end_default = 44100.0;
+  int n_bgn, n_end, k_bgn, k_end, k_bgn_init, k_end_init;
   vector<double> wavemap_lower, wavemap_upper;
   double fs, fs_file;
+  char shape_type;
+  int n_shape_min, n_shape_max, n_shape_num, init_shape;
+  int n_fft, step_fft;
+  double tfmap_limit_lower, tfmap_limit_upper;
+  int mainwindow_init_x_default, mainwindow_init_y_default;
+  int mainwindow_init_width_default, mainwindow_init_height_default;
+  int tfmap_height, wavemap_height;
+  int width;
 
   QApplication app(argc, argv);
 
@@ -35,7 +58,135 @@ int main(int argc, char **argv) {
   analyze_file_name(file_name_all, file_name, channel, total_channel,
                     pixmap_cmd, fs, fs_file, n_samples, n_sounds, wavemap_lower,
                     wavemap_upper);
+  arg_srv.range("");
+  arg_srv.set(&n_bgn, "n_bgn", "開始サンプル番号", 0);
+  arg_srv.set(&n_end, "n_end", "終了サンプル番号", 0);
+  arg_srv.range("1000.0 192000.0");
+  if (fs_file != -1.0) {
+    f_end_default = fs_file / 2.0;
+  }
+  arg_srv.range("");
+  arg_srv.set(&f_bgn, "f_bgn", "取り扱い最低周波数", 0.0);
+  arg_srv.set(&f_end, "f_end", "取り扱い最高周波数", 0.0);
+  arg_srv.set(&f_bgn_init, "f_bgn_init", "起動時の最低周波数", f_bgn);
+  arg_srv.set(&f_end_init, "f_bgn_init", "起動時の最高周波数", f_end);
+  arg_srv.enumerate("n m r b f c g t h H s S");
+  arg_srv.set(&shape_type, "shape_type", "窓タイプ", 'g');
+  arg_srv.enumerate("");
+  arg_srv.range("1 4096");
+  arg_srv.set(&n_shape_min, "n_shape_min", "最小の窓点数", 31);
+  arg_srv.set(&n_shape_max, "n_shape_max", "最大の窓点数", 1023);
+  arg_srv.range("1 16");
+  arg_srv.set(&n_shape_num, "n_shape_num", "窓関数の種類数", 16);
+  arg_srv.range("0 15");
+  arg_srv.set(&init_shape, "init_shape", "何番の窓", 15);
+  arg_srv.range("1 4096");
+  arg_srv.set(&step_fft, "step_fft", "FFTシフト点数", 25);
+  arg_srv.set(&n_fft, "n_fft", "FFT点数", 2048);
+  arg_srv.range("-200.0 540.0");
+  arg_srv.set(&tfmap_limit_lower, "tfmap_limit_lower",
+              "tfmapでこのdB値を黒にする。lower = upperなら自動", 0.0);
+  arg_srv.set(&tfmap_limit_upper, "tfmap_limit_lower",
+              "tfmapでこのdB値を黒にする。lower = upperなら自動", 0.0);
+
+  arg_srv.range("0 5120");
+  mainwindow_init_x_default = MAINWINDOW_X;
+  arg_srv.set(&g_mainwindow_init_x, "x", "起動時のx座標",
+              mainwindow_init_x_default);
+  arg_srv.range("0 10001");
+  mainwindow_init_y_default = MAINWINDOW_Y;
+  arg_srv.set(&g_mainwindow_init_y, "y", "起動時のy座標",
+              mainwindow_init_y_default);
+  arg_srv.range("2 10001");
+  mainwindow_init_width_default = MAINWINDOW_WIDTH;
+  arg_srv.set(&g_mainwindow_init_width, "w", "起動時の横方向の幅",
+              mainwindow_init_width_default);
+  arg_srv.range("0 10001");
+  mainwindow_init_height_default = MAINWINDOW_HEIGHT;
+  arg_srv.set(&g_mainwindow_init_height, "h", "起動時の縦方向の高さ",
+              mainwindow_init_height_default);
+  arg_srv.range("2 10001");
+  arg_srv.set(&tfmap_height, "tfmap_height", "デフォルトのtfmapの高さ",
+              TFMAP_HEIGHT);
+  arg_srv.range("2 10001");
+  arg_srv.set(&wavemap_height, "wavemap_height", "デフォルトのwavemapの高さ",
+              WAVEMAP_HEIGHT);
+
+  g_alsa_dev_default = ALSA_DEV_DEFAULT;
+  arg_srv.range("");
+  arg_srv.set(&g_alsa_dev, "alsa_dev", "ALSAのデバイス名", g_alsa_dev_default);
+  g_alsa_latency_default = ALSA_LATENCY_DEFAULT;
+  arg_srv.range("1 44100");
+  arg_srv.set(&g_alsa_latency, "alsa_latency", "ALSAのレイテンシ",
+              g_alsa_latency_default);
+  arg_srv.range("10 22050");
+  arg_srv.set(&g_alsa_fragment_size, "alsa_fragment_size",
+              "ALSAのフラグメントサイズ", ALSA_FRAGMENT_SIZE);
+  arg_srv.range("1 1000");
+  arg_srv.set(&g_alsa_period, "alsa_period", "ALSAのコールバック間隔 [ms]",
+              ALSA_PERIOD);
+
   arg_srv.finish();
+
+  if (g_mainwindow_init_height == 0) {
+    g_mainwindow_init_height = MAINWINDOW_HEIGHT;
+  }
+
+  if (n_shape_num - 1 < init_shape) {
+    init_shape = n_shape_num - 1;
+  }
+
+  if (init_shape < 0) {
+    init_shape = 0;
+  }
+
+  if (n_shape_min == n_shape_max) {
+    n_shape_num = 1;
+    init_shape = 0;
+  }
+
+  if (n_bgn > n_end) {
+    cerr << "Negative data length. (n_bgn > n_end)" << endl;
+    exit(1);
+  }
+
+  if (fs_file != -1.0 && fs_file != fs) {
+    cerr << "fs was changed from " << fs << " Hz to " << fs_file << " Hz."
+         << endl;
+    fs = fs_file;
+  }
+
+  if (n_bgn == n_end) {
+    n_bgn = 0;
+    n_end = n_bgn + n_samples;
+  }
+
+  step_fft = int(ceil((n_end - n_bgn) / double(g_mainwindow_init_width)));
+  k_bgn = int(round(f_bgn / (fs / n_fft)));
+  if (k_bgn < 0) {
+    k_bgn = 0;
+  }
+  k_end = int(round(f_end / (fs / n_fft)));
+  if (k_end > n_fft / 2) {
+    k_end = n_fft / 2;
+  }
+  k_bgn_init = int(round(f_bgn_init / (fs / n_fft)));
+  if (k_bgn_init < k_bgn) {
+    k_bgn_init = k_bgn;
+  }
+  k_end_init = int(round(f_end_init / (fs / n_fft)));
+  if (k_end_init > k_end) {
+    k_end_init = k_end;
+  }
+
+  width = g_mainwindow_init_width;
+  if (width == 0) {
+    width = (n_end - n_bgn - 1) / step_fft + 1;
+  }
+
+  init_fftw(n_fft);
+
+  sound_list.resize(n_sounds);
 
   sound_list.push_back(
       new Sound("sound", DEFAULT_FILE_NAME, 44100.0, 0, 0, 0, 1, true));

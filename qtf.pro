@@ -8,10 +8,18 @@ QMAKE_CXXFLAGS_DEBUG += -O0
 
 SOURCES += \
   src/main.cpp \
+  src/mainwindow.cpp \
   src/sobj.cpp \
-  src/sound.cpp
+  src/sound.cpp \
+  src/alsa_out.cpp
 
 HEADERS += \
-  src/arg_srv.hpp
-  src/sobj.hpp
-  src/sound.hpp
+  src/mainwindow.hpp \
+  src/arg_srv.hpp \
+  src/sobj.hpp \
+  src/sound.hpp \
+  src/alsa_out.hpp
+
+LIBS += \
+  -lasound \
+  -lfftw3

@@ -1,12 +1,8 @@
-#include <string>
-#include <vector>
-
 #include "sobj.hpp"
 
 using namespace std;
 
 extern int g_default_total_ch;
-
 class Sound : public Sobj {
  private:
   double m_min, m_max;
@@ -47,3 +43,4 @@ void read_audio_file_data(string file_name, FILE **fp, double *fs, int *ch,
                           int *n_samples, int *bias, int *bitdepth,
                           bool *flag_float);
 void audio_read_err(string file_name);
+void init_fftw(int n_fft);

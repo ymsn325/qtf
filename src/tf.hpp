@@ -31,15 +31,36 @@ class TF : public Sobj {
   ~TF();
   bool modify(int n_bgn, int n_end);
   void calculate_param();
-  double norm_min() { return m_norm_min; }
-  double norm_max() { return m_norm_max; }
-  int norm_max_k() { return m_norm_max_k; }
-  int norm_max_n() { return m_norm_max_n; }
+  double norm_min() {
+    if (!m_flag_param) {
+      calculate_param();
+    }
+    return m_norm_min;
+  }
+  double norm_max() {
+    if (!m_flag_param) {
+      calculate_param();
+    }
+    return m_norm_max;
+  }
+  int norm_max_k() {
+    if (!m_flag_param) {
+      calculate_param();
+    }
+    return m_norm_max_k;
+  }
+  int norm_max_n() {
+    if (!m_flag_param) {
+      calculate_param();
+    }
+    return m_norm_max_n;
+  }
   int n_bgn() { return m_n_bgn; }
   int n_end() { return m_n_end; }
   int n_step() { return m_n_step; }
   int n_size() { return m_n_size; }
   int k_bgn() { return m_k_bgn; }
   int k_end() { return m_k_end; }
+  Shape *parent_shape() { return m_parent_shape; }
   complex<double> **data() { return m_data; }
 };

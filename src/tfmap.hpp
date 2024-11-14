@@ -3,6 +3,7 @@
 
 #define CONTRAST_MIN_DEFAULT 0.40
 #define CONTRAST_MAX_DEFAULT 0.85
+#define MAX_DB_LOWER_FROM_UPPER 160.0
 
 class TFmap : public Pixmap {
  private:

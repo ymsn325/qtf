@@ -71,7 +71,7 @@ Sound::Sound(string id, string file_name, double fs, int n_bgn, int n_end,
   m_data = nullptr;
 
   if (read_data) {
-    // Read data from file
+    read_file();
   }
 }
 
@@ -153,11 +153,11 @@ Sounds::Sounds(string id, string file_name, double fs, int n_bgn, int n_end,
          p < n_end - n_bgn + 2 * g_margin && i < n_samples + bias; i++, p++) {
       for (int c = 0; c < m_ch; c++) {
         if (bitdepth > 24) {
-          if (m3 = getc(fp) == EOF) {
+          if ((m3 = getc(fp)) == EOF) {
             break;
-          } else {
-            m3 = 0;
           }
+        } else {
+          m3 = 0;
         }
         if (bitdepth > 16) {
           if ((m2 = getc(fp)) == EOF) {
@@ -172,10 +172,109 @@ Sounds::Sounds(string id, string file_name, double fs, int n_bgn, int n_end,
         if ((n = getc(fp)) == EOF) {
           break;
         }
-        n = ((((n << 8) | m) << 8) | m2) << 8 | m3;
-        m_sound_list[c]->data_margin()[p] = n >> 16;
+        n = (((((n << 8) | m) << 8) | m2) << 8) | m3;
+        m_sound_list[c]->data_margin()[p] = (double)(n >> 16);
       }
     }
+  }
+
+  fclose(fp);
+}
+
+void Sound::read_file() {
+  FILE *fp;
+  int ch;
+  double fs_dummy;
+  int n_samples;
+  int bias;
+  int bitdepth;
+  bool flag_float;
+  int n, m, m2, m3;
+  int p;
+
+  m_data_margin = new double[m_n_end - m_n_bgn + 2 * g_margin];
+  m_data = m_data_margin + g_margin;
+  ch = m_total_ch;
+  read_audio_file_data(m_file_name, &fp, &fs_dummy, &ch, &n_samples, &bias,
+                       &bitdepth, &flag_float);
+  if (verbose('d')) {
+    cerr << "Read file: ";
+    if (fs_dummy > 0.0) {
+      cerr << "fs = " << fs_dummy << " Hz, ";
+    }
+    cerr << "bit depth = " << bitdepth << " bit, ";
+    if (flag_float) {
+      cerr << "(float)" << endl;
+    } else {
+      cerr << endl;
+    }
+  }
+  m_total_ch = ch;
+  if (n_samples != 0) {
+    m_n_samples = n_samples - m_n_bgn - m_n_end;
+  } else {
+    m_n_samples = m_n_end;
+  }
+
+  for (int i = 0; i < (m_n_bgn + bias - g_margin) * ch * bitdepth / 8; i++) {
+    // 先頭の不要な部分を読み飛ばす
+    if ((n = getc(fp)) == EOF) {
+      cerr << "Error: " << m_file_name << " is too short." << endl;
+      exit(1);
+    }
+  }
+
+  if (m_selected_ch >= ch) {
+    cerr << "Error: " << m_file_name << " has only " << ch << " channels. ";
+    cerr << " But " << m_selected_ch << " channel was specified." << endl;
+    exit(1);
+  }
+
+  if (m_total_ch > ch) {
+    cerr << "Error: " << m_file_name << " has only " << ch << " channels. ";
+    cerr << "But " << m_total_ch << " channels were specified." << endl;
+    exit(1);
+  } else if (ch > m_total_ch) {
+    cerr << "Error: " << m_file_name << " has only " << ch << " channels. ";
+    cerr << "Read as " << m_total_ch << " channels." << endl;
+  }
+
+  p = 0;
+  for (int i = 0; i < g_margin - (m_n_bgn)-bias; i++) {
+    m_data_margin[p++] = 0.0;
+  }
+
+  if (flag_float) {
+  } else {
+    for (int i = max2(m_n_bgn - g_margin + bias, 0);
+         p < m_n_samples + 2 * g_margin && i < n_samples + bias; i++, p++) {
+      if (bitdepth > 24) {
+        if ((m3 = getc(fp)) == EOF) {
+          break;
+        }
+      } else {
+        m3 = 0;
+      }
+      if (bitdepth > 16) {
+        if ((m2 = getc(fp)) == EOF) {
+          break;
+        }
+      } else {
+        m2 = 0;
+      }
+      if ((m = getc(fp)) == EOF) {
+        break;
+      }
+      if ((n = getc(fp)) == EOF) {
+        break;
+      }
+      n = ((((n << 8) | m) << 8) | m2) << 8 | m3;
+      m_data_margin[p] = n >> 16;
+    }
+  }
+
+  for (; p < m_n_end - m_n_bgn + 2 * g_margin; p++) {
+    m_data_margin[p] = 0.0;
   }
 
   fclose(fp);

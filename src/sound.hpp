@@ -46,6 +46,7 @@ class Sound : public Sobj {
   void set_data(double *data) { m_data = data; }
   void set_n_samples(int n_samples) { m_n_samples = n_samples; }
   void set_in_ch(int in_ch) { m_in_ch = in_ch; }
+  void read_file();
 };
 
 class Sounds : public Sobj {

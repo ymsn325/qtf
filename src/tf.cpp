@@ -2,12 +2,14 @@
 
 #include <iostream>
 
+#include "standard.hpp"
+
 using namespace std;
 
 TF::TF(string id, Sound *sound, Shape *shape, fftw_plan *plan_fftw,
        fftw_complex *fftw_in, fftw_complex *fftw_out, int n_fft, int step_fft,
        int k_bgn, int k_end)
-    : Sobj(id) {
+    : Sobj(id, sound, shape) {
   m_parent_sound = sound;
   m_parent_shape = shape;
   m_n_fft = n_fft;
@@ -72,19 +74,19 @@ bool TF::modify(int n_bgn, int n_end) {
         for (n = 0; n <= n_shape_1; n++) {
           m_fftw_in[n][0] =
               sound_data[i * m_n_step + n] * shape_data[n_shape_1 - n];
-          m_fftw_out[n][1] = 0.0;
+          m_fftw_in[n][1] = 0.0;
         }
       }
 
       for (; n < m_n_fft - n_shape_1; n++) {
         m_fftw_in[n][0] = 0.0;
-        m_fftw_out[n][1] = 0.0;
+        m_fftw_in[n][1] = 0.0;
       }
 
       for (int n2 = 0; n < m_n_fft; n++, n2++) {
         m_fftw_in[n][0] =
             sound_data[i * m_n_step - n_shape_1 + n2] * shape_data[n2];
-        m_fftw_out[n][1] = 0.0;
+        m_fftw_in[n][1] = 0.0;
       }
 
       fftw_execute(*m_plan_fftw);
@@ -97,4 +99,26 @@ bool TF::modify(int n_bgn, int n_end) {
   }
 
   return flag_modify;
+}
+
+void TF::calculate_param() {
+  double x;
+  m_norm_min = MAX_DBL;
+  m_norm_max = -MAX_DBL;
+
+  for (int i = 0; i < m_n_size; i++) {
+    for (int k = 0; k < m_k_end - m_k_bgn; k++) {
+      x = norm(m_data[i][k]);
+      if (x > m_norm_max) {
+        m_norm_max = x;
+        m_norm_max_k = k;
+        m_norm_max_n = i;
+      }
+      if (x < m_norm_min) {
+        m_norm_min = x;
+      }
+    }
+  }
+
+  m_flag_param = true;
 }

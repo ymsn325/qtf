@@ -1,8 +1,11 @@
 #include "shape.hpp"
 
 #include <cmath>
+#include <iostream>
 
 #include "standard.hpp"
+
+using namespace std;
 
 Shape::Shape(string id, int n, char type, Shapes *parent_shapes)
     : Sobj(id), m_n(n), m_type(type), m_parent_shapes(parent_shapes) {

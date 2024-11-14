@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "image.hpp"
+#include "standard.hpp"
 
 using namespace std;
 
@@ -25,7 +26,7 @@ TFmap::TFmap(string id, TF *tf, int k_bgn, int k_end, int height, int n_dup,
     m_k_step--;
   }
 
-  while (k_bgn + m_k_step * (height - 1) < tf->k_end()) {
+  while (k_bgn + m_k_step * (height - 1) >= tf->k_end()) {
     m_k_step--;
     adj_flag = true;
   }
@@ -53,6 +54,7 @@ TFmap::TFmap(string id, TF *tf, int k_bgn, int k_end, int height, int n_dup,
   m_contrast_max = contrast_max;
   m_limit_lower = limit_lower;
   m_limit_upper = limit_upper;
+  m_parent_tf = tf;
   m_pow = new double[m_width * m_height];
 
   modify(m_n_bgn, m_n_end);
@@ -65,10 +67,24 @@ bool TFmap::modify(int n_bgn, int n_end) {
   double x;
   bool zero_flag;
   int pix, pix2;
+  double max_norm = -MAX_DBL, min_norm = MAX_DBL;
 
   if (m_parent_tf->norm_max() != 0.0) {
-    upper = m_limit_upper;
-    lower = m_limit_lower;
+    if (m_limit_lower == m_limit_upper) {
+      min_norm = m_parent_tf->norm_min();
+      max_norm = m_parent_tf->norm_max();
+
+      upper = 10.0 * log10(max_norm / sqr(m_parent_tf->parent_shape()->area()));
+      lower = 10.0 * log10(min_norm / sqr(m_parent_tf->parent_shape()->area()));
+
+      if (lower < upper - MAX_DB_LOWER_FROM_UPPER) {
+        lower = upper - MAX_DB_LOWER_FROM_UPPER;
+      }
+    } else {
+      upper = m_limit_upper;
+      lower = m_limit_lower;
+    }
+
     zero_flag = false;
   } else {
     upper = 0.0;
@@ -87,6 +103,7 @@ bool TFmap::modify(int n_bgn, int n_end) {
                lower) /
               (upper - lower);
           x = (m_pow[pix] - m_contrast_min) / (m_contrast_max - m_contrast_min);
+          cerr << m_pow[pix] << " " << x << endl;
           if (m_flag_reverse) {
             x = 1.0 - x;
           }
@@ -97,6 +114,9 @@ bool TFmap::modify(int n_bgn, int n_end) {
             } else {
               double2rgb(x, m_data_rgb + pix * 3, m_data_rgb + pix * 3 + 1,
                          m_data_rgb + pix * 3 + 2);
+              if (i == 500) {
+                cout << x << endl;
+              }
             }
             pix++;
           }

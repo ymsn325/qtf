@@ -1,6 +1,9 @@
 #include "image.hpp"
 
 #include <cmath>
+#include <iostream>
+
+using namespace std;
 
 void double2rgb(double x, unsigned char *r, unsigned char *g,
                 unsigned char *b) {

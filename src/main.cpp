@@ -1,4 +1,7 @@
 #include <QApplication>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QMainWindow>
 #include <string>
 
@@ -28,6 +31,18 @@ extern int g_alsa_latency;
 extern int g_alsa_period;
 extern fftw_complex *g_fftw_in, *g_fftw_out;
 extern fftw_plan g_plan_fftw;
+
+// デバッグ用の関数を追加
+void printImageData(const unsigned char *data, int width, int height) {
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      int index = (y * width + x) * 3;  // RGBなので3倍
+      std::cerr << "(" << (int)data[index] << ", " << (int)data[index + 1]
+                << ", " << (int)data[index + 2] << ") ";
+    }
+    std::cerr << std::endl;
+  }
+}
 
 int main(int argc, char **argv) {
   string file_name_all;
@@ -243,13 +258,31 @@ int main(int argc, char **argv) {
 
           tfmap_list.push_back(new TFmap(
               "tfmap_" + file_id + ch_id, tf_list.back(), k_bgn_init,
-              k_end_init, height, 1, tfmap_limit_lower, tfmap_limit_upper));
+              k_end_init, height, 1, CONTRAST_MIN_DEFAULT, CONTRAST_MAX_DEFAULT,
+              tfmap_limit_lower, tfmap_limit_upper));
         }
       }
     }
   }
 
   QMainWindow window;
+  const unsigned char *imageData = tfmap_list.back()->data_rgb();
+  int imageWidth = tfmap_list.back()->width();
+  int imageHeight = tfmap_list.back()->height();
+
+  // デバッグ出力
+  // printImageData(imageData, imageWidth, imageHeight);
+
+  QImage image(tfmap_list.back()->data_rgb(), tfmap_list.back()->width(),
+               tfmap_list.back()->height(), QImage::Format_RGB888);
+  QPixmap pixmap = QPixmap::fromImage(image);
+  QGraphicsScene scene;
+  QGraphicsPixmapItem *item = new QGraphicsPixmapItem(pixmap);
+  scene.addItem(item);
+  QGraphicsView view(&scene, &window);
+  view.setFixedSize(tfmap_list.back()->width(), tfmap_list.back()->height());
+  view.show();
+
   window.show();
   return app.exec();
 }

@@ -280,28 +280,30 @@ int main(int argc, char **argv) {
     j++;
   }
 
-  QMainWindow window;
-  const unsigned char *imageData = wavemap_list.back()->data_rgb();
-  int imageWidth = wavemap_list.back()->width();
-  int imageHeight = wavemap_list.back()->height();
+  // QMainWindow window;
+  // const unsigned char *imageData = tfmap_list.back()->data_rgb();
+  // int imageWidth = tfmap_list.back()->width();
+  // int imageHeight = tfmap_list.back()->height();
 
-  int originalWidth = wavemap_list.back()->width();
-  int aligenedWidth = (originalWidth + 3) & ~3;
-  unsigned char *alignedImageData =
-      new unsigned char[aligenedWidth * imageHeight * 3];
-  for (int y = 0; y < imageHeight; y++) {
-    memcpy(alignedImageData + y * aligenedWidth * 3,
-           imageData + y * originalWidth * 3, originalWidth * 3);
-  }
-  QImage image(alignedImageData, aligenedWidth, imageHeight,
-               QImage::Format_RGB888);
-  QPixmap pixmap = QPixmap::fromImage(image);
-  QGraphicsScene scene;
-  scene.addPixmap(pixmap);
-  QGraphicsView view(&scene, &window);
-  view.setFixedSize(imageWidth, imageHeight);
-  view.show();
+  // int originalWidth = tfmap_list.back()->width();
+  // int aligenedWidth = (originalWidth + 3) & ~3;
+  // unsigned char *alignedImageData =
+  //     new unsigned char[aligenedWidth * imageHeight * 3];
+  // for (int y = 0; y < imageHeight; y++) {
+  //   memcpy(alignedImageData + y * aligenedWidth * 3,
+  //          imageData + y * originalWidth * 3, originalWidth * 3);
+  // }
+  // QImage image(alignedImageData, aligenedWidth, imageHeight,
+  //              QImage::Format_RGB888);
+  // QPixmap pixmap = QPixmap::fromImage(image);
+  // QGraphicsScene scene;
+  // scene.addPixmap(pixmap);
+  // QGraphicsView view(&scene, &window);
+  // view.setFixedSize(imageWidth, imageHeight);
+  // view.show();
 
-  window.show();
+  // window.show();
+
+  MainWindow window("TF: ");
   return app.exec();
 }

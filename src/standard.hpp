@@ -1,8 +1,14 @@
+#pragma once
+
 #include <sstream>
 
 #define MAX_DBL 1.7976931348623158e+308
 #define MAX_INT 2147483647
 #define PI 3.141592653589793238462643383279
+
+#define WHITE 0xffffff
+#define DARK_BLUE 0x00008b
+#define LIGHT_BLUE 0xadd8e6
 
 extern string g_verbose_mode;
 

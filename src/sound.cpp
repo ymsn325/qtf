@@ -280,6 +280,33 @@ void Sound::read_file() {
   fclose(fp);
 }
 
+void Sound::calculate_param() {
+  if (!m_flag_param) {
+    m_max_abs = -MAX_DBL;
+    m_min = MAX_DBL;
+    m_max = -MAX_DBL;
+    m_ave = 0.0;
+    m_pow = 0.0;
+    for (int i = 0; i < m_n_end - m_n_bgn; i++) {
+      if (m_data[i] > m_max) {
+        m_max = m_data[i];
+      }
+      if (m_data[i] < m_min) {
+        m_min = m_data[i];
+      }
+      m_ave += m_data[i];
+      m_pow += m_data[i] * m_data[i];
+      if (fabs(m_data[i]) > m_max_abs) {
+        m_max_abs = fabs(m_data[i]);
+      }
+    }
+    m_ave /= m_n_end - m_n_bgn;
+    m_pow /= m_n_end - m_n_bgn;
+    m_max_abs = max2(m_max_abs, 1.0);
+    m_flag_param = true;
+  }
+}
+
 void analyze_file_name(string file_name_all, vector<string> &file_name,
                        vector<int> &channel, vector<int> &total_channel,
                        vector<vector<string>> &pixmap_cmd, double &fs,

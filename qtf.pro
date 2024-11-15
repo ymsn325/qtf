@@ -15,6 +15,7 @@ SOURCES += \
   src/tf.cpp \
   src/pixmap.cpp \
   src/tfmap.cpp \
+  src/wavemap.cpp \
   src/alsa_out.cpp \
   src/image.cpp
 
@@ -27,6 +28,7 @@ HEADERS += \
   src/tf.hpp \
   src/pixmap.hpp \
   src/tfmap.hpp \
+  src/wavemap.hpp \
   src/alsa_out.hpp \
   src/image.hpp \
   src/standard.hpp

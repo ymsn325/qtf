@@ -36,6 +36,12 @@ class Sound : public Sobj {
   int n_end() { return m_n_end; }
   double *data_margin() { return m_data_margin; }
   double *data() { return m_data; }
+  double max_abs() {
+    if (!m_flag_param) {
+      calculate_param();
+    }
+    return m_max_abs;
+  }
   void set_file_name(string file_name) { m_file_name = file_name; }
   void set_fs(double fs) { m_fs = fs; }
   void set_n_bgn(int n_bgn) { m_n_bgn = n_bgn; }
@@ -47,6 +53,7 @@ class Sound : public Sobj {
   void set_n_samples(int n_samples) { m_n_samples = n_samples; }
   void set_in_ch(int in_ch) { m_in_ch = in_ch; }
   void read_file();
+  void calculate_param();
 };
 
 class Sounds : public Sobj {

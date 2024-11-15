@@ -15,3 +15,21 @@ Pixmap::~Pixmap() {
   delete[] m_data_rgb;
   delete[] m_data_alpha;
 }
+
+void Pixmap::draw_background(int color24) {
+  char r, g, b;
+
+  r = (color24 >> 16) & 0xff;
+  g = (color24 >> 8) & 0xff;
+  b = color24 & 0xff;
+
+  for (int i = 0; i < m_width * m_height * 3;) {
+    m_data_rgb[i++] = r;
+    m_data_rgb[i++] = g;
+    m_data_rgb[i++] = b;
+  }
+
+  for (int i = 0; i < m_width * m_height; i++) {
+    m_data_alpha[i] = 0;
+  }
+}

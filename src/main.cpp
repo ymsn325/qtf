@@ -15,6 +15,7 @@
 #include "standard.hpp"
 #include "tf.hpp"
 #include "tfmap.hpp"
+#include "wavemap.hpp"
 
 using namespace std;
 
@@ -74,6 +75,7 @@ int main(int argc, char **argv) {
   Shapes *shapes;
   vector<TF *> tf_list;
   vector<TFmap *> tfmap_list;
+  vector<Wavemap *> wavemap_list;
 
   QApplication app(argc, argv);
 
@@ -264,15 +266,26 @@ int main(int argc, char **argv) {
               tfmap_limit_lower, tfmap_limit_upper));
         }
       }
+
+      for (int j2 = 0; j2 < pixmap_cmd[i].size(); j2++) {
+        height = wavemap_height;
+        rest = 0;
+        if (find_string(pixmap_cmd[i], j2, "w", height, rest)) {
+          wavemap_list.push_back(
+              new Wavemap("wavemap_" + file_id + ch_id, sound_list[j], width,
+                          height, DARK_BLUE, LIGHT_BLUE, LIGHT_BLUE, WHITE));
+        }
+      }
     }
+    j++;
   }
 
   QMainWindow window;
-  const unsigned char *imageData = tfmap_list.back()->data_rgb();
-  int imageWidth = tfmap_list.back()->width();
-  int imageHeight = tfmap_list.back()->height();
+  const unsigned char *imageData = wavemap_list.back()->data_rgb();
+  int imageWidth = wavemap_list.back()->width();
+  int imageHeight = wavemap_list.back()->height();
 
-  int originalWidth = tfmap_list.back()->width();
+  int originalWidth = wavemap_list.back()->width();
   int aligenedWidth = (originalWidth + 3) & ~3;
   unsigned char *alignedImageData =
       new unsigned char[aligenedWidth * imageHeight * 3];
@@ -286,7 +299,7 @@ int main(int argc, char **argv) {
   QGraphicsScene scene;
   scene.addPixmap(pixmap);
   QGraphicsView view(&scene, &window);
-  view.setFixedSize(tfmap_list.back()->width(), tfmap_list.back()->height());
+  view.setFixedSize(imageWidth, imageHeight);
   view.show();
 
   window.show();

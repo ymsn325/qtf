@@ -37,6 +37,9 @@ MainWindow::MainWindow(string id, int pos_x, int pos_y, int width, int height)
 void MainWindow::append_pixmap(Pixmap *parent_pixmap) {
   vector<Sound *>::iterator p;
   QPushButton *play_button;
+  QImage image;
+  QLabel *label;
+  QPixmap pixmap;
   if (m_width == 0) {
     m_width = parent_pixmap->width();
   }
@@ -49,6 +52,8 @@ void MainWindow::append_pixmap(Pixmap *parent_pixmap) {
   append_parent(parent_pixmap);
   m_height_list.push_back(parent_pixmap->height());
   m_height = parent_pixmap->height();
+  label = new QLabel(m_central_widget);
+  m_area_list.push_back(label);
 
   const unsigned char *imageData = parent_pixmap->data_rgb();
   int imageWidth = m_width;
@@ -63,10 +68,10 @@ void MainWindow::append_pixmap(Pixmap *parent_pixmap) {
            imageData + y * originalWidth * 3, originalWidth * 3);
   }
 
-  QImage image(alignedImageData, aligenedWidth, imageHeight,
-               QImage::Format_RGB888);
-  QPixmap pixmap = QPixmap::fromImage(image);
-  QLabel *label = new QLabel(m_central_widget);
+  image = QImage(alignedImageData, aligenedWidth, imageHeight,
+                 QImage::Format_RGB888);
+  pixmap = QPixmap::fromImage(image);
+  label = new QLabel(m_central_widget);
   label->setPixmap(pixmap);
   m_top_layout->addWidget(label, m_row_cur, 0);
 

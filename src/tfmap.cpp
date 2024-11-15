@@ -98,11 +98,13 @@ bool TFmap::modify(int n_bgn, int n_end) {
       for (int k = m_k_end - m_k_step; k >= m_k_bgn; k -= m_k_step) {
         for (int i = 0; i < m_n_size; i++) {
           m_pow[pix] =
-              10.0 *
-              (log10(norm((m_parent_tf->data()[i][k - m_parent_tf->k_bgn()])) /
-                     sqr(m_parent_tf->parent_shape()->area())) -
+              (10.0 *
+                   log10(
+                       norm(m_parent_tf->data()[i][k - m_parent_tf->k_bgn()]) /
+                       sqr(m_parent_tf->parent_shape()->area())) -
                lower) /
               (upper - lower);
+
           x = (m_pow[pix] - m_contrast_min) / (m_contrast_max - m_contrast_min);
           if (m_flag_reverse) {
             x = 1.0 - x;
@@ -114,9 +116,6 @@ bool TFmap::modify(int n_bgn, int n_end) {
             } else {
               double2rgb(x, m_data_rgb + pix * 3, m_data_rgb + pix * 3 + 1,
                          m_data_rgb + pix * 3 + 2);
-              if (i == 500) {
-                cout << x << endl;
-              }
             }
             pix++;
           }

@@ -33,4 +33,5 @@ HEADERS += \
 
 LIBS += \
   -lasound \
-  -lfftw3
+  -lfftw3 \
+  -lpng

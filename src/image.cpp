@@ -19,7 +19,7 @@ void double2rgb(double x, unsigned char *r, unsigned char *g,
 
   x *= RGB_MAX;
 
-  if (x < R0) {
+    if (x < R0) {
     *r = 0;
   } else if (x < R1) {
     *r = (unsigned char)(255.0 * pow((x - R0) / (R1 - R0), 0.6));

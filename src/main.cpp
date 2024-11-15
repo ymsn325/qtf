@@ -1,3 +1,5 @@
+#include <png.h>
+
 #include <QApplication>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
@@ -270,15 +272,19 @@ int main(int argc, char **argv) {
   int imageWidth = tfmap_list.back()->width();
   int imageHeight = tfmap_list.back()->height();
 
-  // デバッグ出力
-  // printImageData(imageData, imageWidth, imageHeight);
-
-  QImage image(tfmap_list.back()->data_rgb(), tfmap_list.back()->width(),
-               tfmap_list.back()->height(), QImage::Format_RGB888);
+  int originalWidth = tfmap_list.back()->width();
+  int aligenedWidth = (originalWidth + 3) & ~3;
+  unsigned char *alignedImageData =
+      new unsigned char[aligenedWidth * imageHeight * 3];
+  for (int y = 0; y < imageHeight; y++) {
+    memcpy(alignedImageData + y * aligenedWidth * 3,
+           imageData + y * originalWidth * 3, originalWidth * 3);
+  }
+  QImage image(alignedImageData, aligenedWidth, imageHeight,
+               QImage::Format_RGB888);
   QPixmap pixmap = QPixmap::fromImage(image);
   QGraphicsScene scene;
-  QGraphicsPixmapItem *item = new QGraphicsPixmapItem(pixmap);
-  scene.addItem(item);
+  scene.addPixmap(pixmap);
   QGraphicsView view(&scene, &window);
   view.setFixedSize(tfmap_list.back()->width(), tfmap_list.back()->height());
   view.show();

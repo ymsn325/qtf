@@ -212,6 +212,9 @@ int main(int argc, char **argv) {
   }
 
   width = g_mainwindow_init_width;
+
+  width = 0;
+
   if (width == 0) {
     width = (n_end - n_bgn - 1) / step_fft + 1;
   }
@@ -305,5 +308,7 @@ int main(int argc, char **argv) {
   // window.show();
 
   MainWindow window("TF: ");
+  window.append_pixmap(tfmap_list.back());
+  window.append_pixmap(wavemap_list.back());
   return app.exec();
 }

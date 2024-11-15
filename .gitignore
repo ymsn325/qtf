@@ -3,3 +3,5 @@ bin/*
 Makefile
 .qmake.stash
 *.dat
+*.png
+moc_*

@@ -8,6 +8,9 @@
     "vector": "cpp",
     "iosfwd": "cpp",
     "cmath": "cpp",
-    "iostream": "cpp"
+    "iostream": "cpp",
+    "qgraphicsview": "cpp",
+    "format": "cpp",
+    "sstream": "cpp"
   }
 }

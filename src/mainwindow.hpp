@@ -1,5 +1,8 @@
+#include <QGraphicsView>
+#include <QGridLayout>
 #include <QMainWindow>
 
+#include "pixmap.hpp"
 #include "sobj.hpp"
 #include "standard.hpp"
 
@@ -14,11 +17,30 @@ extern int g_mainwindow_init_height;
 
 class MainWindow : public Sobj {
  private:
-  QMainWindow *m_mainwindow;
+  QMainWindow *m_toplevel;
+  QWidget *m_central_widget;
+  QGridLayout *m_top_layout;
   int m_mainwindow_height;
   int m_width, m_height;
+  int m_row_cur;
+  vector<int> m_height_list;
 
  public:
   MainWindow(string id, int pos_x = MAX_INT, int pos_y = MAX_INT,
              int width = MAX_INT, int height = g_mainwindow_init_height);
+  void append_pixmap(Pixmap *parent_pixmap);
+};
+
+class GraphicsView : public QGraphicsView {
+  Q_OBJECT
+
+ public:
+  GraphicsView(QWidget *parent = nullptr) : QGraphicsView(parent) {}
+
+ protected:
+  void showEvent(QShowEvent *event) override {
+    QGraphicsView::showEvent(event);
+    fitInView(scene()->sceneRect(),
+              Qt::IgnoreAspectRatio);  // シーンをビューに合わせる
+  }
 };
